@@ -1,19 +1,29 @@
-name: Sync to Gitee
+name: Sync from Gitee to GitHub
 
 on:
   push:
-    branches: [ main ]  # 监听 main 分支
+    branches:
+      - main  # 或者 'master'，根据你的默认分支名
 
 jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout GitHub Repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Push to Gitee
+      - name: Clone Gitee Repository
         run: |
-          git remote add gitee https://yourname:${{ secrets.GITEE_TOKEN }}@gitee.com/yourname/my-project.git
-          git push gitee main --force
+          git clone https://${{ secrets.GITEE_USERNAME }}:${{ secrets.GITEE_TOKEN }}@gitee.com/${{ github.repository }}.git gitee-repo
+
+      - name: Merge Gitee Changes into GitHub
+        working-directory: gitee-repo
+        run: |
+          git checkout main  # 根据实际情况调整分支名
+          git pull origin main
+
+      - name: Push Changes to GitHub
+        working-directory: gitee-repo
+        run: |
+          git remote add github-origin https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          git push github-origin main --force  # 强制推送以覆盖现有内容
